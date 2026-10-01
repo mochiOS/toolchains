@@ -1,1 +1,2 @@
 ARCH	=	x86_64
+SDK		=	YOUR_SDK_PATH
