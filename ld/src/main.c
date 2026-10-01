@@ -14,6 +14,8 @@
 #error "unsupported architecture"
 #endif
 
+#define EXTRA_ARGS 64
+
 static const char *find_sdk(const char *explicit_sdk) {
 	const char *environment_sdk;
 
@@ -156,7 +158,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	capacity = argc + 32;
+	capacity = argc + EXTRA_ARGS;
 
 	lld_argv = calloc((size_t)capacity, sizeof(*lld_argv));
 	if (lld_argv == NULL) {
