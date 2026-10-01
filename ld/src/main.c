@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <limits.h>
+#include <linux/limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,13 +26,24 @@ static const char *find_sdk(const char *explicit_sdk) {
 	return NULL;
 }
 
+static int require_file(const char *path) {
+	if (access(path, R_OK) == 0) return 0;
+
+	fprintf(stderr, DRIVER_NAME ": required SDK file not found: %s\n",
+		path);
+	return -1;
+}
+
 static void usage(void) {
 	fprintf(stderr, "usage: " DRIVER_NAME
 			" [--mochios-sdk <path>] <objects...> -o <output>\n");
 }
 
 static int append(char **argv, int *count, int capacity, char *value) {
-	if (*count >= capacity - 1) return -1;
+	if (*count >= capacity - 1) {
+		fprintf(stderr, DRIVER_NAME ": too many linker arguments\n");
+		return -1;
+	}
 
 	argv[(*count)++] = value;
 	return 0;
@@ -48,6 +60,7 @@ int main(int argc, char **argv) {
 	char libgcc[PATH_MAX];
 	char sysroot[PATH_MAX];
 	char sysroot_lib[PATH_MAX];
+	char sdk_lib[PATH_MAX];
 
 	char **lld_argv;
 
@@ -131,6 +144,12 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+	if (snprintf(sdk_lib, sizeof(sdk_lib), "-L%s/lib", sdk) >=
+	    (int)sizeof(sdk_lib)) {
+		fprintf(stderr, DRIVER_NAME ": SDK path is too long\n");
+		return 1;
+	}
+
 	if (snprintf(sysroot_lib, sizeof(sysroot_lib), "-L%s/sysroot/lib",
 		     sdk) >= (int)sizeof(sysroot_lib)) {
 		fprintf(stderr, DRIVER_NAME ": SDK path is too long\n");
@@ -145,8 +164,13 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+	if (require_file(linker_script) != 0 || require_file(crt0) != 0 ||
+	    require_file(runtime) != 0 || require_file(libgcc) != 0)
+		return 1;
+
 	append(lld_argv, &lld_argc, capacity, "ld.lld");
 	append(lld_argv, &lld_argc, capacity, sysroot);
+	append(lld_argv, &lld_argc, capacity, sdk_lib);
 	append(lld_argv, &lld_argc, capacity, sysroot_lib);
 	append(lld_argv, &lld_argc, capacity, "--static");
 	append(lld_argv, &lld_argc, capacity, "--nostdlib");

@@ -2,7 +2,7 @@ PROJECTS	= clang ld
 
 .PHONY: all clean $(PROJECTS)
 
-all: $(PROJECTS)
+all: fmt $(PROJECTS)
 	@echo "Build complete"
 
 fmt:
