@@ -1,5 +1,5 @@
 PROJECTS	= clang ld
-VERSION		?= 0.1.0
+VERSION		?= 27.0-dp.1
 ARCH		?= x86_64
 DIST		= out/dist
 RELEASE_DIR	= $(DIST)/$(ARCH)-mochios-toolchain-$(VERSION)
